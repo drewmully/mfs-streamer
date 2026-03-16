@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>3PL Task Board</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600;700&family=IBM+Plex+Mono:wght@600;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600;700;800&family=IBM+Plex+Mono:wght@600;700;800&display=swap');
 
   :root {
     --yellow: #FFD600;
@@ -13,12 +13,20 @@
     --dark: #151515;
     --gray: #222;
     --white: #FFFFFF;
-    --row-odd: #181818;
-    --row-even: #111100;
-    --joe: #FFD600;
-    --jordan: #FFFFFF;
-    --jack: #FFB300;
-    --brett: #BDBDBD;
+    --row-odd: #161619;
+    --row-even: #1c1c10;
+
+    /* Colorblind-safe crew palette (distinguishable across all CVD types) */
+    --joe: #4A90D9;       /* Blue — universally distinct */
+    --jordan: #FF8C00;    /* Deep orange — safe vs blue */
+    --jack: #00BCD4;      /* Cyan/teal — safe vs orange */
+    --brett: #E040FB;     /* Magenta/pink — safe vs all above */
+
+    /* Status colors — avoids red/green entirely */
+    --status-empty: #333;
+    --status-not: #666;
+    --status-wip: #FFD600;
+    --status-done: #4CAF50;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -46,24 +54,25 @@
     align-items: center;
     justify-content: space-between;
     background: var(--black);
-    border-bottom: 3px solid var(--yellow);
+    border-bottom: 4px solid var(--yellow);
     padding: 0 1.5vw;
-    height: 6.5vh;
+    height: 6vh;
     flex-shrink: 0;
   }
   .top-bar h1 {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: clamp(18px, 2.8vw, 42px);
+    font-size: clamp(20px, 2.8vw, 44px);
     color: var(--yellow);
     letter-spacing: 0.12em;
     text-transform: uppercase;
+    font-weight: 800;
   }
   .top-meta {
     display: flex;
-    gap: 2.5vw;
+    gap: 2vw;
     align-items: center;
-    font-size: clamp(12px, 1.3vw, 22px);
-    font-weight: 600;
+    font-size: clamp(13px, 1.3vw, 22px);
+    font-weight: 700;
   }
   .date-val {
     color: var(--yellow);
@@ -85,6 +94,29 @@
   }
   .btn-clear:hover { border-color: var(--yellow); color: var(--yellow); }
 
+  /* ========== SHIFT PROGRESS BAR ========== */
+  .progress-bar-track {
+    height: 6px;
+    background: #1a1a1a;
+    flex-shrink: 0;
+    position: relative;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: var(--yellow);
+    transition: width 60s linear;
+    border-radius: 0 3px 3px 0;
+  }
+  .progress-bar-label {
+    position: absolute;
+    right: 1vw;
+    top: -1px;
+    font-size: 10px;
+    color: #666;
+    font-family: 'IBM Plex Mono', monospace;
+    line-height: 6px;
+  }
+
   /* ========== PANELS ========== */
   .panels {
     display: flex;
@@ -103,8 +135,8 @@
   .panel-header {
     background: var(--yellow);
     color: var(--black);
-    font-weight: 700;
-    font-size: clamp(13px, 1.5vw, 24px);
+    font-weight: 800;
+    font-size: clamp(14px, 1.5vw, 24px);
     padding: 0 1.2vw;
     letter-spacing: 0.06em;
     text-transform: uppercase;
@@ -112,7 +144,11 @@
     display: flex;
     align-items: center;
     gap: 0.6vw;
-    height: 5vh;
+    height: 4.8vh;
+  }
+  .panel-icon {
+    font-size: clamp(14px, 1.4vw, 22px);
+    margin-right: 2px;
   }
   .tag {
     font-size: clamp(8px, 0.7vw, 12px);
@@ -135,7 +171,7 @@
     background: var(--gray);
     border-bottom: 2px solid var(--yellow);
     flex-shrink: 0;
-    height: 4vh;
+    height: 3.6vh;
     align-items: center;
   }
   .th {
@@ -160,12 +196,22 @@
     flex: 1;
     border-bottom: 1px solid #1e1e1e;
     min-height: 0;
+    transition: background 0.15s;
   }
   .task-row:nth-child(odd) { background: var(--row-odd); }
   .task-row:nth-child(even) { background: var(--row-even); }
 
+  /* Row glow when status is IN PROGRESS */
+  .task-row.row-wip {
+    background: rgba(255,214,0,0.06) !important;
+    border-left: 4px solid var(--yellow);
+  }
+  .task-row.row-done {
+    opacity: 0.45;
+  }
+
   .td {
-    font-size: clamp(12px, 1.3vw, 20px);
+    font-size: clamp(13px, 1.4vw, 22px);
     color: var(--white);
     text-align: center;
     padding: 0 6px;
@@ -185,12 +231,12 @@
   .td.num-col {
     font-family: 'IBM Plex Mono', monospace;
     color: var(--yellow);
-    font-weight: 600;
-    opacity: 0.35;
-    font-size: clamp(10px, 1.1vw, 16px);
+    font-weight: 700;
+    opacity: 0.3;
+    font-size: clamp(11px, 1.2vw, 18px);
   }
 
-  /* Editable */
+  /* Editable inputs */
   .td-edit {
     width: 100%;
     height: 100%;
@@ -211,7 +257,7 @@
   }
   .td.name-col .td-edit { text-align: left; font-weight: 700; }
 
-  /* Selects */
+  /* Select dropdowns */
   .td-select {
     width: 100%;
     height: 100%;
@@ -239,16 +285,16 @@
     padding: 8px;
   }
 
-  /* Name colors */
+  /* Crew colors — colorblind-safe */
   .name-joe { color: var(--joe); }
   .name-jordan { color: var(--jordan); }
   .name-jack { color: var(--jack); }
   .name-brett { color: var(--brett); }
 
   /* Status styles */
-  .status-not-started { color: #555; }
-  .status-in-progress { color: var(--yellow); }
-  .status-done { color: #666; text-decoration: line-through; }
+  .status-not-started { color: var(--status-not); }
+  .status-in-progress { color: var(--status-wip); }
+  .status-done { color: var(--status-done); text-decoration: line-through; }
 
   /* ========== BOTTOM BAR ========== */
   .bottom-bar {
@@ -256,41 +302,48 @@
     align-items: center;
     justify-content: space-between;
     background: var(--black);
-    border-top: 3px solid var(--yellow);
+    border-top: 4px solid var(--yellow);
     padding: 0 1.5vw;
-    height: 6vh;
+    height: 5.5vh;
     flex-shrink: 0;
   }
+
+  /* Status legend with shapes + color */
   .legend {
     display: flex;
-    gap: 1.5vw;
+    gap: 1.2vw;
     align-items: center;
     flex-shrink: 0;
   }
   .legend-item {
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 6px;
     font-size: clamp(10px, 1vw, 15px);
     font-weight: 700;
   }
-  .legend-dot {
-    width: clamp(10px, 1vw, 16px);
-    height: clamp(10px, 1vw, 16px);
-    border-radius: 3px;
-    flex-shrink: 0;
+  .legend-shape {
+    font-size: clamp(12px, 1.1vw, 18px);
+    line-height: 1;
   }
 
+  /* Crew legend with shapes for colorblind users */
   .crew-legend {
     display: flex;
-    gap: 1.5vw;
+    gap: 1.2vw;
     align-items: center;
     flex-shrink: 0;
   }
-  .crew-name {
+  .crew-chip {
+    display: flex;
+    align-items: center;
+    gap: 4px;
     font-size: clamp(11px, 1.1vw, 17px);
     font-weight: 700;
     letter-spacing: 0.03em;
+  }
+  .crew-shape {
+    font-size: clamp(10px, 0.9vw, 14px);
   }
 
   .notes-bar {
@@ -298,7 +351,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    margin: 0 2vw;
+    margin: 0 1.5vw;
     min-width: 0;
   }
   .notes-bar strong {
@@ -321,34 +374,34 @@
 
   .clock {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: clamp(16px, 1.8vw, 28px);
+    font-size: clamp(18px, 2vw, 32px);
     color: var(--yellow);
-    font-weight: 700;
+    font-weight: 800;
     flex-shrink: 0;
   }
 
-  /* Column widths — simplified */
+  /* ========== COLUMN WIDTHS ========== */
   /* Non-build: #, Task Type, Assigned, Status */
-  .panel.non-build .col-num { width: 8%; }
-  .panel.non-build .col-type { width: 38%; }
-  .panel.non-build .col-assign { width: 27%; }
-  .panel.non-build .col-status { width: 27%; }
+  .panel.non-build .col-num { width: 7%; }
+  .panel.non-build .col-type { width: 37%; }
+  .panel.non-build .col-assign { width: 28%; }
+  .panel.non-build .col-status { width: 28%; }
 
   /* eComm: #, Order/SKU, Qty, Assigned, Status */
-  .panel.ecomm .col-num { width: 7%; }
+  .panel.ecomm .col-num { width: 6%; }
   .panel.ecomm .col-order { width: 30%; }
   .panel.ecomm .col-qty { width: 12%; }
-  .panel.ecomm .col-assign { width: 25%; }
+  .panel.ecomm .col-assign { width: 26%; }
   .panel.ecomm .col-status { width: 26%; }
 
   /* Assembly: #, Build, Qty, Assigned, Status */
-  .panel.assembly .col-num { width: 7%; }
+  .panel.assembly .col-num { width: 6%; }
   .panel.assembly .col-build { width: 30%; }
   .panel.assembly .col-qty { width: 12%; }
-  .panel.assembly .col-assign { width: 25%; }
+  .panel.assembly .col-assign { width: 26%; }
   .panel.assembly .col-status { width: 26%; }
 
-  /* Confirm dialog */
+  /* ========== CONFIRM DIALOG ========== */
   .confirm-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.88); z-index:1000; align-items:center; justify-content:center; }
   .confirm-overlay.show { display:flex; }
   .confirm-box { background:#1a1a1a; border:2px solid var(--yellow); border-radius:8px; padding:3vw; text-align:center; }
@@ -356,6 +409,32 @@
   .confirm-box button { font-family:'IBM Plex Sans',sans-serif; font-size:clamp(13px,1.1vw,18px); font-weight:700; padding:10px 32px; border-radius:4px; border:none; cursor:pointer; margin:0 10px; }
   .confirm-box .btn-yes { background:var(--yellow); color:var(--black); }
   .confirm-box .btn-no { background:#333; color:var(--white); }
+
+  /* ========== SECTION SUMMARY COUNTERS ========== */
+  .panel-summary {
+    display: flex;
+    gap: 1vw;
+    margin-left: auto;
+    align-items: center;
+  }
+  .summary-badge {
+    font-size: clamp(9px, 0.8vw, 13px);
+    font-weight: 700;
+    padding: 1px 8px;
+    border-radius: 3px;
+    font-family: 'IBM Plex Mono', monospace;
+    letter-spacing: 0.02em;
+  }
+  .summary-badge.wip-count {
+    background: rgba(255,214,0,0.2);
+    color: var(--yellow);
+    border: 1px solid var(--yellow);
+  }
+  .summary-badge.done-count {
+    background: rgba(76,175,80,0.2);
+    color: var(--status-done);
+    border: 1px solid var(--status-done);
+  }
 </style>
 </head>
 <body>
@@ -375,8 +454,13 @@
     <div class="top-meta">
       <span>DATE: <span class="date-val" id="dateDisplay"></span></span>
       <span>8:30 AM – 5:00 PM</span>
-      <button class="btn-clear" onclick="showClearConfirm()">▶ New Day</button>
+      <button class="btn-clear" onclick="showClearConfirm()">&#9654; New Day</button>
     </div>
+  </div>
+
+  <!-- Shift progress bar -->
+  <div class="progress-bar-track">
+    <div class="progress-bar-fill" id="shiftProgress" style="width:0%"></div>
   </div>
 
   <div class="panels">
@@ -384,11 +468,12 @@
     <!-- NON-BUILD -->
     <div class="panel non-build">
       <div class="panel-header">
-        ▶ Non-Build Tasks
+        <span class="panel-icon">&#128230;</span> Non-Build Tasks
         <span class="tag">Returns</span>
         <span class="tag">Receiving</span>
         <span class="tag">5S</span>
         <span class="tag">Setup</span>
+        <div class="panel-summary" id="summary-nonbuild"></div>
       </div>
       <div class="task-table">
         <div class="table-header">
@@ -403,7 +488,10 @@
 
     <!-- eCOMMERCE -->
     <div class="panel ecomm">
-      <div class="panel-header">▶ eCommerce Pick & Pack</div>
+      <div class="panel-header">
+        <span class="panel-icon">&#128666;</span> eCommerce Pick &amp; Pack
+        <div class="panel-summary" id="summary-ecomm"></div>
+      </div>
       <div class="task-table">
         <div class="table-header">
           <div class="th col-num">#</div>
@@ -418,7 +506,10 @@
 
     <!-- ASSEMBLY -->
     <div class="panel assembly">
-      <div class="panel-header">▶ Assembly Line Builds</div>
+      <div class="panel-header">
+        <span class="panel-icon">&#128295;</span> Assembly Line Builds
+        <div class="panel-summary" id="summary-assembly"></div>
+      </div>
       <div class="task-table">
         <div class="table-header">
           <div class="th col-num">#</div>
@@ -433,17 +524,25 @@
   </div>
 
   <div class="bottom-bar">
+    <!-- Status legend — shapes + color for colorblind safety -->
     <div class="legend">
-      <div class="legend-item" style="color:#555;"><div class="legend-dot" style="border:2px solid #555;"></div> Not Started</div>
-      <div class="legend-item" style="color:var(--yellow);"><div class="legend-dot" style="background:var(--yellow);"></div> In Progress</div>
-      <div class="legend-item" style="color:#666;"><div class="legend-dot" style="background:var(--white);"></div> Done</div>
+      <div class="legend-item" style="color:var(--status-not);">
+        <span class="legend-shape">&#9675;</span> Not Started
+      </div>
+      <div class="legend-item" style="color:var(--status-wip);">
+        <span class="legend-shape">&#9654;</span> In Progress
+      </div>
+      <div class="legend-item" style="color:var(--status-done);">
+        <span class="legend-shape">&#10003;</span> Done
+      </div>
     </div>
+    <!-- Crew legend — unique shapes per person for colorblind safety -->
     <div class="crew-legend">
       <span style="color:#555; font-size:clamp(9px,0.9vw,14px); font-weight:700;">CREW:</span>
-      <span class="crew-name" style="color:var(--joe);">Joe</span>
-      <span class="crew-name" style="color:var(--jordan);">Jordan</span>
-      <span class="crew-name" style="color:var(--jack);">Jack</span>
-      <span class="crew-name" style="color:var(--brett);">Brett</span>
+      <span class="crew-chip" style="color:var(--joe);"><span class="crew-shape">&#9679;</span> Joe</span>
+      <span class="crew-chip" style="color:var(--jordan);"><span class="crew-shape">&#9670;</span> Jordan</span>
+      <span class="crew-chip" style="color:var(--jack);"><span class="crew-shape">&#9650;</span> Jack</span>
+      <span class="crew-chip" style="color:var(--brett);"><span class="crew-shape">&#9632;</span> Brett</span>
     </div>
     <div class="notes-bar">
       <strong>NOTES:</strong>
@@ -457,7 +556,20 @@
 const ROWS = 8;
 const NAMES = ['', 'Joe', 'Jordan', 'Jack', 'Brett'];
 const STATUSES = ['', 'NOT STARTED', 'IN PROGRESS', 'DONE'];
-const NAME_COLORS = { 'Joe': 'var(--joe)', 'Jordan': 'var(--jordan)', 'Jack': 'var(--jack)', 'Brett': 'var(--brett)' };
+
+// Colorblind-safe colors with unique shape prefixes
+const NAME_COLORS = {
+  'Joe':    'var(--joe)',
+  'Jordan': 'var(--jordan)',
+  'Jack':   'var(--jack)',
+  'Brett':  'var(--brett)'
+};
+const NAME_SHAPES = {
+  'Joe':    '\u25CF',   // ●
+  'Jordan': '\u25C6',   // ◆
+  'Jack':   '\u25B2',   // ▲
+  'Brett':  '\u25A0'    // ■
+};
 
 // Clock
 function updateClock() {
@@ -466,10 +578,23 @@ function updateClock() {
 updateClock();
 setInterval(updateClock, 1000);
 
+// Shift progress bar (8:30 AM to 5:00 PM = 510 min)
+function updateShiftProgress() {
+  const now = new Date();
+  const start = new Date(now); start.setHours(8,30,0,0);
+  const end = new Date(now); end.setHours(17,0,0,0);
+  const total = end - start;
+  const elapsed = now - start;
+  const pct = Math.max(0, Math.min(100, (elapsed / total) * 100));
+  document.getElementById('shiftProgress').style.width = pct + '%';
+}
+updateShiftProgress();
+setInterval(updateShiftProgress, 60000);
+
 // Date
 document.getElementById('dateDisplay').textContent = new Date().toLocaleDateString('en-US', { weekday:'long', month:'short', day:'numeric', year:'numeric' });
 
-// Build select
+// Build select with shape prefix for crew names
 function makeSelect(options, section, row, col) {
   const sel = document.createElement('select');
   sel.className = 'td-select';
@@ -478,10 +603,21 @@ function makeSelect(options, section, row, col) {
   sel.dataset.col = col;
   options.forEach(o => {
     const opt = document.createElement('option');
-    opt.value = o; opt.textContent = o || '—';
+    opt.value = o;
+    if (col === 'assign' && o && NAME_SHAPES[o]) {
+      opt.textContent = NAME_SHAPES[o] + ' ' + o;
+    } else if (col === 'status' && o === 'NOT STARTED') {
+      opt.textContent = '\u25CB NOT STARTED';
+    } else if (col === 'status' && o === 'IN PROGRESS') {
+      opt.textContent = '\u25B6 IN PROGRESS';
+    } else if (col === 'status' && o === 'DONE') {
+      opt.textContent = '\u2713 DONE';
+    } else {
+      opt.textContent = o || '\u2014';
+    }
     sel.appendChild(opt);
   });
-  sel.addEventListener('change', function() { styleSelect(this); saveData(); });
+  sel.addEventListener('change', function() { styleSelect(this); applyRowState(this); saveData(); updateSummaries(); });
   return sel;
 }
 
@@ -498,7 +634,35 @@ function styleSelect(sel) {
   }
 }
 
-// Non-build rows: #, TaskType(text), Assigned(select), Status(select)
+// Apply row-level visual state based on status
+function applyRowState(sel) {
+  if (sel.dataset.col !== 'status') return;
+  const row = sel.closest('.task-row');
+  if (!row) return;
+  row.classList.remove('row-wip', 'row-done');
+  if (sel.value === 'IN PROGRESS') row.classList.add('row-wip');
+  else if (sel.value === 'DONE') row.classList.add('row-done');
+}
+
+// Update summary badges on panel headers
+function updateSummaries() {
+  ['nonbuild','ecomm','assembly'].forEach(sec => {
+    let wip = 0, done = 0;
+    for (let r = 0; r < ROWS; r++) {
+      const sel = document.querySelector(`select[data-section="${sec}"][data-row="${r}"][data-col="status"]`);
+      if (sel) {
+        if (sel.value === 'IN PROGRESS') wip++;
+        else if (sel.value === 'DONE') done++;
+      }
+    }
+    const container = document.getElementById('summary-' + sec);
+    container.innerHTML = '';
+    if (wip > 0) container.innerHTML += `<span class="summary-badge wip-count">\u25B6 ${wip}</span>`;
+    if (done > 0) container.innerHTML += `<span class="summary-badge done-count">\u2713 ${done}</span>`;
+  });
+}
+
+// Non-build rows
 function buildNonBuild() {
   const c = document.getElementById('nonbuild-body');
   c.innerHTML = '';
@@ -531,7 +695,7 @@ function buildNonBuild() {
   }
 }
 
-// eComm rows: #, Order/SKU(text), Qty(text), Assigned(select), Status(select)
+// eComm rows
 function buildEcomm() {
   const c = document.getElementById('ecomm-body');
   c.innerHTML = '';
@@ -573,7 +737,7 @@ function buildEcomm() {
   }
 }
 
-// Assembly rows: #, Build(text), Qty(text), Assigned(select), Status(select)
+// Assembly rows
 function buildAssembly() {
   const c = document.getElementById('assembly-body');
   c.innerHTML = '';
@@ -646,10 +810,14 @@ function loadData() {
     data.sections[sec].forEach((rd, r) => {
       Object.keys(rd).forEach(col => {
         const el = document.querySelector(`[data-section="${sec}"][data-row="${r}"][data-col="${col}"]`);
-        if (el) { el.value = rd[col]; if (el.tagName === 'SELECT') styleSelect(el); }
+        if (el) {
+          el.value = rd[col];
+          if (el.tagName === 'SELECT') { styleSelect(el); applyRowState(el); }
+        }
       });
     });
   });
+  updateSummaries();
 }
 loadData();
 
@@ -660,9 +828,11 @@ function confirmClear() {
   document.getElementById('confirmOverlay').classList.remove('show');
   document.querySelectorAll('.td-edit').forEach(i => i.value = '');
   document.querySelectorAll('.td-select').forEach(s => { s.value = ''; s.className = 'td-select'; s.style.color = ''; });
+  document.querySelectorAll('.task-row').forEach(r => r.classList.remove('row-wip', 'row-done'));
   document.getElementById('notesInput').value = '';
   document.getElementById('dateDisplay').textContent = new Date().toLocaleDateString('en-US', { weekday:'long', month:'short', day:'numeric', year:'numeric' });
   saveData();
+  updateSummaries();
 }
 </script>
 </body>
