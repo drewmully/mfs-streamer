@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3PL Task Board</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600;700&family=IBM+Plex+Mono:wght@600;700&display=swap');
+
+  :root {
+    --yellow: #FFD600;
+    --black: #0A0A0A;
+    --dark: #151515;
+    --gray: #222;
+    --white: #FFFFFF;
+    --row-odd: #181818;
+    --row-even: #111100;
+    --joe: #FFD600;
+    --jordan: #FFFFFF;
+    --jack: #FFB300;
+    --brett: #BDBDBD;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+    background: var(--black);
+    color: var(--white);
+    font-family: 'IBM Plex Sans', sans-serif;
+    user-select: none;
+  }
+
+  .dashboard {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100vw;
+  }
+
+  /* ========== TOP BAR ========== */
+  .top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--black);
+    border-bottom: 3px solid var(--yellow);
+    padding: 0 1.5vw;
+    height: 6.5vh;
+    flex-shrink: 0;
+  }
+  .top-bar h1 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: clamp(18px, 2.8vw, 42px);
+    color: var(--yellow);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .top-meta {
+    display: flex;
+    gap: 2.5vw;
+    align-items: center;
+    font-size: clamp(12px, 1.3vw, 22px);
+    font-weight: 600;
+  }
+  .date-val {
+    color: var(--yellow);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .btn-clear {
+    background: transparent;
+    border: 2px solid #444;
+    color: #888;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: clamp(9px, 0.85vw, 14px);
+    font-weight: 700;
+    padding: 5px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    transition: all 0.2s;
+  }
+  .btn-clear:hover { border-color: var(--yellow); color: var(--yellow); }
+
+  /* ========== PANELS ========== */
+  .panels {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+  }
+  .panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    border-right: 2px solid #282828;
+    min-width: 0;
+  }
+  .panel:last-child { border-right: none; }
+
+  .panel-header {
+    background: var(--yellow);
+    color: var(--black);
+    font-weight: 700;
+    font-size: clamp(13px, 1.5vw, 24px);
+    padding: 0 1.2vw;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.6vw;
+    height: 5vh;
+  }
+  .tag {
+    font-size: clamp(8px, 0.7vw, 12px);
+    background: var(--black);
+    color: var(--yellow);
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-weight: 600;
+  }
+
+  /* ========== TABLE ========== */
+  .task-table {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .table-header {
+    display: flex;
+    background: var(--gray);
+    border-bottom: 2px solid var(--yellow);
+    flex-shrink: 0;
+    height: 4vh;
+    align-items: center;
+  }
+  .th {
+    font-size: clamp(9px, 1vw, 15px);
+    font-weight: 700;
+    color: var(--yellow);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    text-align: center;
+    padding: 0 4px;
+  }
+
+  .table-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .task-row {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    border-bottom: 1px solid #1e1e1e;
+    min-height: 0;
+  }
+  .task-row:nth-child(odd) { background: var(--row-odd); }
+  .task-row:nth-child(even) { background: var(--row-even); }
+
+  .td {
+    font-size: clamp(12px, 1.3vw, 20px);
+    color: var(--white);
+    text-align: center;
+    padding: 0 6px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .td.name-col {
+    justify-content: flex-start;
+    text-align: left;
+    font-weight: 700;
+  }
+  .td.num-col {
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--yellow);
+    font-weight: 600;
+    opacity: 0.35;
+    font-size: clamp(10px, 1.1vw, 16px);
+  }
+
+  /* Editable */
+  .td-edit {
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    border: none;
+    color: var(--white);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: inherit;
+    text-align: center;
+    outline: none;
+    padding: 0 6px;
+    cursor: text;
+    user-select: text;
+  }
+  .td-edit:focus {
+    background: rgba(255,214,0,0.08);
+    box-shadow: inset 0 0 0 2px var(--yellow);
+  }
+  .td.name-col .td-edit { text-align: left; font-weight: 700; }
+
+  /* Selects */
+  .td-select {
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    border: none;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: inherit;
+    font-weight: 700;
+    text-align: center;
+    outline: none;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    padding: 0 4px;
+    user-select: text;
+  }
+  .td-select:focus {
+    background: rgba(255,214,0,0.08);
+    box-shadow: inset 0 0 0 2px var(--yellow);
+  }
+  .td-select option {
+    background: #222;
+    color: var(--white);
+    font-size: 16px;
+    padding: 8px;
+  }
+
+  /* Name colors */
+  .name-joe { color: var(--joe); }
+  .name-jordan { color: var(--jordan); }
+  .name-jack { color: var(--jack); }
+  .name-brett { color: var(--brett); }
+
+  /* Status styles */
+  .status-not-started { color: #555; }
+  .status-in-progress { color: var(--yellow); }
+  .status-done { color: #666; text-decoration: line-through; }
+
+  /* ========== BOTTOM BAR ========== */
+  .bottom-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--black);
+    border-top: 3px solid var(--yellow);
+    padding: 0 1.5vw;
+    height: 6vh;
+    flex-shrink: 0;
+  }
+  .legend {
+    display: flex;
+    gap: 1.5vw;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: clamp(10px, 1vw, 15px);
+    font-weight: 700;
+  }
+  .legend-dot {
+    width: clamp(10px, 1vw, 16px);
+    height: clamp(10px, 1vw, 16px);
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+
+  .crew-legend {
+    display: flex;
+    gap: 1.5vw;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  .crew-name {
+    font-size: clamp(11px, 1.1vw, 17px);
+    font-weight: 700;
+    letter-spacing: 0.03em;
+  }
+
+  .notes-bar {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 2vw;
+    min-width: 0;
+  }
+  .notes-bar strong {
+    color: var(--yellow);
+    font-size: clamp(10px, 1vw, 15px);
+    flex-shrink: 0;
+  }
+  .notes-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid #333;
+    color: #ccc;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: clamp(11px, 1vw, 16px);
+    outline: none;
+    padding: 2px 6px;
+  }
+  .notes-input:focus { border-bottom-color: var(--yellow); color: var(--white); }
+
+  .clock {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: clamp(16px, 1.8vw, 28px);
+    color: var(--yellow);
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  /* Column widths — simplified */
+  /* Non-build: #, Task Type, Assigned, Status */
+  .panel.non-build .col-num { width: 8%; }
+  .panel.non-build .col-type { width: 38%; }
+  .panel.non-build .col-assign { width: 27%; }
+  .panel.non-build .col-status { width: 27%; }
+
+  /* eComm: #, Order/SKU, Qty, Assigned, Status */
+  .panel.ecomm .col-num { width: 7%; }
+  .panel.ecomm .col-order { width: 30%; }
+  .panel.ecomm .col-qty { width: 12%; }
+  .panel.ecomm .col-assign { width: 25%; }
+  .panel.ecomm .col-status { width: 26%; }
+
+  /* Assembly: #, Build, Qty, Assigned, Status */
+  .panel.assembly .col-num { width: 7%; }
+  .panel.assembly .col-build { width: 30%; }
+  .panel.assembly .col-qty { width: 12%; }
+  .panel.assembly .col-assign { width: 25%; }
+  .panel.assembly .col-status { width: 26%; }
+
+  /* Confirm dialog */
+  .confirm-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.88); z-index:1000; align-items:center; justify-content:center; }
+  .confirm-overlay.show { display:flex; }
+  .confirm-box { background:#1a1a1a; border:2px solid var(--yellow); border-radius:8px; padding:3vw; text-align:center; }
+  .confirm-box p { font-size:clamp(16px,1.8vw,26px); margin-bottom:24px; color:var(--white); }
+  .confirm-box button { font-family:'IBM Plex Sans',sans-serif; font-size:clamp(13px,1.1vw,18px); font-weight:700; padding:10px 32px; border-radius:4px; border:none; cursor:pointer; margin:0 10px; }
+  .confirm-box .btn-yes { background:var(--yellow); color:var(--black); }
+  .confirm-box .btn-no { background:#333; color:var(--white); }
+</style>
+</head>
+<body>
+
+<div class="confirm-overlay" id="confirmOverlay">
+  <div class="confirm-box">
+    <p>Clear all tasks and start fresh?</p>
+    <button class="btn-yes" onclick="confirmClear()">Yes, New Day</button>
+    <button class="btn-no" onclick="cancelClear()">Cancel</button>
+  </div>
+</div>
+
+<div class="dashboard">
+
+  <div class="top-bar">
+    <h1>Task Board</h1>
+    <div class="top-meta">
+      <span>DATE: <span class="date-val" id="dateDisplay"></span></span>
+      <span>8:30 AM – 5:00 PM</span>
+      <button class="btn-clear" onclick="showClearConfirm()">▶ New Day</button>
+    </div>
+  </div>
+
+  <div class="panels">
+
+    <!-- NON-BUILD -->
+    <div class="panel non-build">
+      <div class="panel-header">
+        ▶ Non-Build Tasks
+        <span class="tag">Returns</span>
+        <span class="tag">Receiving</span>
+        <span class="tag">5S</span>
+        <span class="tag">Setup</span>
+      </div>
+      <div class="task-table">
+        <div class="table-header">
+          <div class="th col-num">#</div>
+          <div class="th col-type">Task Type</div>
+          <div class="th col-assign">Assigned</div>
+          <div class="th col-status">Status</div>
+        </div>
+        <div class="table-body" id="nonbuild-body"></div>
+      </div>
+    </div>
+
+    <!-- eCOMMERCE -->
+    <div class="panel ecomm">
+      <div class="panel-header">▶ eCommerce Pick & Pack</div>
+      <div class="task-table">
+        <div class="table-header">
+          <div class="th col-num">#</div>
+          <div class="th col-order">Order / SKU</div>
+          <div class="th col-qty">Qty</div>
+          <div class="th col-assign">Assigned</div>
+          <div class="th col-status">Status</div>
+        </div>
+        <div class="table-body" id="ecomm-body"></div>
+      </div>
+    </div>
+
+    <!-- ASSEMBLY -->
+    <div class="panel assembly">
+      <div class="panel-header">▶ Assembly Line Builds</div>
+      <div class="task-table">
+        <div class="table-header">
+          <div class="th col-num">#</div>
+          <div class="th col-build">Build / Project</div>
+          <div class="th col-qty">Qty Goal</div>
+          <div class="th col-assign">Assigned</div>
+          <div class="th col-status">Status</div>
+        </div>
+        <div class="table-body" id="assembly-body"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-bar">
+    <div class="legend">
+      <div class="legend-item" style="color:#555;"><div class="legend-dot" style="border:2px solid #555;"></div> Not Started</div>
+      <div class="legend-item" style="color:var(--yellow);"><div class="legend-dot" style="background:var(--yellow);"></div> In Progress</div>
+      <div class="legend-item" style="color:#666;"><div class="legend-dot" style="background:var(--white);"></div> Done</div>
+    </div>
+    <div class="crew-legend">
+      <span style="color:#555; font-size:clamp(9px,0.9vw,14px); font-weight:700;">CREW:</span>
+      <span class="crew-name" style="color:var(--joe);">Joe</span>
+      <span class="crew-name" style="color:var(--jordan);">Jordan</span>
+      <span class="crew-name" style="color:var(--jack);">Jack</span>
+      <span class="crew-name" style="color:var(--brett);">Brett</span>
+    </div>
+    <div class="notes-bar">
+      <strong>NOTES:</strong>
+      <input type="text" class="notes-input" id="notesInput" placeholder="Manager notes..." oninput="saveData()">
+    </div>
+    <div class="clock" id="clock"></div>
+  </div>
+</div>
+
+<script>
+const ROWS = 8;
+const NAMES = ['', 'Joe', 'Jordan', 'Jack', 'Brett'];
+const STATUSES = ['', 'NOT STARTED', 'IN PROGRESS', 'DONE'];
+const NAME_COLORS = { 'Joe': 'var(--joe)', 'Jordan': 'var(--jordan)', 'Jack': 'var(--jack)', 'Brett': 'var(--brett)' };
+
+// Clock
+function updateClock() {
+  document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+// Date
+document.getElementById('dateDisplay').textContent = new Date().toLocaleDateString('en-US', { weekday:'long', month:'short', day:'numeric', year:'numeric' });
+
+// Build select
+function makeSelect(options, section, row, col) {
+  const sel = document.createElement('select');
+  sel.className = 'td-select';
+  sel.dataset.section = section;
+  sel.dataset.row = row;
+  sel.dataset.col = col;
+  options.forEach(o => {
+    const opt = document.createElement('option');
+    opt.value = o; opt.textContent = o || '—';
+    sel.appendChild(opt);
+  });
+  sel.addEventListener('change', function() { styleSelect(this); saveData(); });
+  return sel;
+}
+
+function styleSelect(sel) {
+  const v = sel.value;
+  sel.className = 'td-select';
+  if (sel.dataset.col === 'assign') {
+    sel.style.color = NAME_COLORS[v] || '#555';
+  } else if (sel.dataset.col === 'status') {
+    if (v === 'NOT STARTED') { sel.classList.add('status-not-started'); sel.style.color = ''; }
+    else if (v === 'IN PROGRESS') { sel.classList.add('status-in-progress'); sel.style.color = ''; }
+    else if (v === 'DONE') { sel.classList.add('status-done'); sel.style.color = ''; }
+    else { sel.style.color = '#555'; }
+  }
+}
+
+// Non-build rows: #, TaskType(text), Assigned(select), Status(select)
+function buildNonBuild() {
+  const c = document.getElementById('nonbuild-body');
+  c.innerHTML = '';
+  for (let i = 0; i < ROWS; i++) {
+    const row = document.createElement('div');
+    row.className = 'task-row';
+    row.innerHTML = `<div class="td num-col col-num">${i+1}</div>`;
+
+    const tdType = document.createElement('div');
+    tdType.className = 'td name-col col-type';
+    const inp = document.createElement('input');
+    inp.type = 'text'; inp.className = 'td-edit';
+    inp.dataset.section = 'nonbuild'; inp.dataset.row = i; inp.dataset.col = 'type';
+    inp.style.textAlign = 'left'; inp.style.fontWeight = '700';
+    inp.addEventListener('input', saveData);
+    tdType.appendChild(inp);
+    row.appendChild(tdType);
+
+    const tdAssign = document.createElement('div');
+    tdAssign.className = 'td col-assign';
+    tdAssign.appendChild(makeSelect(NAMES, 'nonbuild', i, 'assign'));
+    row.appendChild(tdAssign);
+
+    const tdStatus = document.createElement('div');
+    tdStatus.className = 'td col-status';
+    tdStatus.appendChild(makeSelect(STATUSES, 'nonbuild', i, 'status'));
+    row.appendChild(tdStatus);
+
+    c.appendChild(row);
+  }
+}
+
+// eComm rows: #, Order/SKU(text), Qty(text), Assigned(select), Status(select)
+function buildEcomm() {
+  const c = document.getElementById('ecomm-body');
+  c.innerHTML = '';
+  for (let i = 0; i < ROWS; i++) {
+    const row = document.createElement('div');
+    row.className = 'task-row';
+    row.innerHTML = `<div class="td num-col col-num">${i+1}</div>`;
+
+    const tdOrder = document.createElement('div');
+    tdOrder.className = 'td name-col col-order';
+    const inp1 = document.createElement('input');
+    inp1.type = 'text'; inp1.className = 'td-edit';
+    inp1.dataset.section = 'ecomm'; inp1.dataset.row = i; inp1.dataset.col = 'order';
+    inp1.style.textAlign = 'left'; inp1.style.fontWeight = '700';
+    inp1.addEventListener('input', saveData);
+    tdOrder.appendChild(inp1);
+    row.appendChild(tdOrder);
+
+    const tdQty = document.createElement('div');
+    tdQty.className = 'td col-qty';
+    const inp2 = document.createElement('input');
+    inp2.type = 'text'; inp2.className = 'td-edit';
+    inp2.dataset.section = 'ecomm'; inp2.dataset.row = i; inp2.dataset.col = 'qty';
+    inp2.addEventListener('input', saveData);
+    tdQty.appendChild(inp2);
+    row.appendChild(tdQty);
+
+    const tdAssign = document.createElement('div');
+    tdAssign.className = 'td col-assign';
+    tdAssign.appendChild(makeSelect(NAMES, 'ecomm', i, 'assign'));
+    row.appendChild(tdAssign);
+
+    const tdStatus = document.createElement('div');
+    tdStatus.className = 'td col-status';
+    tdStatus.appendChild(makeSelect(STATUSES, 'ecomm', i, 'status'));
+    row.appendChild(tdStatus);
+
+    c.appendChild(row);
+  }
+}
+
+// Assembly rows: #, Build(text), Qty(text), Assigned(select), Status(select)
+function buildAssembly() {
+  const c = document.getElementById('assembly-body');
+  c.innerHTML = '';
+  for (let i = 0; i < ROWS; i++) {
+    const row = document.createElement('div');
+    row.className = 'task-row';
+    row.innerHTML = `<div class="td num-col col-num">${i+1}</div>`;
+
+    const tdBuild = document.createElement('div');
+    tdBuild.className = 'td name-col col-build';
+    const inp1 = document.createElement('input');
+    inp1.type = 'text'; inp1.className = 'td-edit';
+    inp1.dataset.section = 'assembly'; inp1.dataset.row = i; inp1.dataset.col = 'build';
+    inp1.style.textAlign = 'left'; inp1.style.fontWeight = '700';
+    inp1.addEventListener('input', saveData);
+    tdBuild.appendChild(inp1);
+    row.appendChild(tdBuild);
+
+    const tdQty = document.createElement('div');
+    tdQty.className = 'td col-qty';
+    const inp2 = document.createElement('input');
+    inp2.type = 'text'; inp2.className = 'td-edit';
+    inp2.dataset.section = 'assembly'; inp2.dataset.row = i; inp2.dataset.col = 'qty';
+    inp2.addEventListener('input', saveData);
+    tdQty.appendChild(inp2);
+    row.appendChild(tdQty);
+
+    const tdAssign = document.createElement('div');
+    tdAssign.className = 'td col-assign';
+    tdAssign.appendChild(makeSelect(NAMES, 'assembly', i, 'assign'));
+    row.appendChild(tdAssign);
+
+    const tdStatus = document.createElement('div');
+    tdStatus.className = 'td col-status';
+    tdStatus.appendChild(makeSelect(STATUSES, 'assembly', i, 'status'));
+    row.appendChild(tdStatus);
+
+    c.appendChild(row);
+  }
+}
+
+// Init
+buildNonBuild();
+buildEcomm();
+buildAssembly();
+
+// Save / Load
+function saveData() {
+  const data = { notes: document.getElementById('notesInput').value, sections: {} };
+  ['nonbuild','ecomm','assembly'].forEach(sec => {
+    data.sections[sec] = [];
+    for (let r = 0; r < ROWS; r++) {
+      const rd = {};
+      document.querySelectorAll(`[data-section="${sec}"][data-row="${r}"]`).forEach(el => {
+        rd[el.dataset.col] = el.value;
+      });
+      data.sections[sec].push(rd);
+    }
+  });
+  try { localStorage.setItem('taskboard_v2', JSON.stringify(data)); } catch(e) {}
+}
+
+function loadData() {
+  let data;
+  try { data = JSON.parse(localStorage.getItem('taskboard_v2')); } catch(e) {}
+  if (!data) return;
+  if (data.notes) document.getElementById('notesInput').value = data.notes;
+  ['nonbuild','ecomm','assembly'].forEach(sec => {
+    if (!data.sections || !data.sections[sec]) return;
+    data.sections[sec].forEach((rd, r) => {
+      Object.keys(rd).forEach(col => {
+        const el = document.querySelector(`[data-section="${sec}"][data-row="${r}"][data-col="${col}"]`);
+        if (el) { el.value = rd[col]; if (el.tagName === 'SELECT') styleSelect(el); }
+      });
+    });
+  });
+}
+loadData();
+
+// Clear
+function showClearConfirm() { document.getElementById('confirmOverlay').classList.add('show'); }
+function cancelClear() { document.getElementById('confirmOverlay').classList.remove('show'); }
+function confirmClear() {
+  document.getElementById('confirmOverlay').classList.remove('show');
+  document.querySelectorAll('.td-edit').forEach(i => i.value = '');
+  document.querySelectorAll('.td-select').forEach(s => { s.value = ''; s.className = 'td-select'; s.style.color = ''; });
+  document.getElementById('notesInput').value = '';
+  document.getElementById('dateDisplay').textContent = new Date().toLocaleDateString('en-US', { weekday:'long', month:'short', day:'numeric', year:'numeric' });
+  saveData();
+}
+</script>
+</body>
+</html>
